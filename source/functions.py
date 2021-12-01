@@ -2,7 +2,7 @@ import numpy as np
 from glob import glob
 import os
 from numpy.core.fromnumeric import squeeze
-#import pandas as pd
+import pandas as pd
 import math
 import time
 
@@ -568,14 +568,15 @@ def print_loss(work_dir, sleep_time = 0, stop = None):
         plt.ylabel('Loss')
         #plt.xticks(rotation=45, ha='right')
         plt.suptitle('Training loss')
-        #plt.show()
-        display.display(plt.gcf())
-        display.clear_output(wait=True)
 
         if stop is None:
-            return
+            return plt
+        else:
+            #plt.show()
+            display.display(plt.gcf())
+            display.clear_output(wait=True)
     
-    return
+    return plt
 
 def print_eval(work_dir, sleep_time = 0, stop = None):
     # 
@@ -604,11 +605,117 @@ def print_eval(work_dir, sleep_time = 0, stop = None):
         plt.ylabel('Top k errors')
         #plt.xticks(rotation=45, ha='right')
         plt.suptitle('Training evaluation')
-        #plt.show()
-        display.display(plt.gcf())
-        display.clear_output(wait=True)
+
+        if stop is None:
+            return plt
+        else:
+            #plt.show()
+            display.display(plt.gcf())
+            display.clear_output(wait=True)
+
+    
+    return plt
+
+
+def plot_loss(work_dir, sleep_time = 0, stop = None):
+    # 
+    while (True):
+        if (stop is not None and stop()):
+            break
+
+        time.sleep(sleep_time)
+
+        try:
+            train_log = torch.load(work_dir + '/train_log.pkl')
+        except:
+            # no file
+            if stop is None:
+                return
+            else:
+                continue
+
+        epochs = train_log['train_epoch']
+        loss = train_log['train_loss']
+        # 
+        fig = plt.figure()
+        fig.suptitle('Training loss', fontsize=14, fontweight='bold')
+        ax = fig.add_subplot(1,1,1)
+        ax.set_xlabel('Epochs')
+        ax.set_ylabel('Loss')
+        ax.plot(epochs, loss)
+        #plt.xticks(rotation=45, ha='right')
 
         if stop is None:
             return
+        else:
+            #plt.show()
+            display.display(plt.gcf())
+            display.clear_output(wait=True)
     
     return
+
+
+def plot_eval(work_dir, sleep_time = 0, stop = None):
+    # 
+    while (True):
+        if (stop is not None and stop()):
+            break
+
+        time.sleep(sleep_time)
+
+        try:
+            train_log = torch.load(work_dir + '/train_log.pkl')
+        except:
+            # no file
+            if stop is None:
+                return
+            else:
+                continue
+
+        epochs = train_log['eval_epoch']
+        top1 = train_log['eval_top1']
+        topk = train_log['eval_topk']
+        # 
+        fig = plt.figure()
+        fig.suptitle('Evaluation', fontsize=14, fontweight='bold')
+        ax = fig.add_subplot(1,1,1)
+        ax.set_xlabel('Epochs')
+        ax.set_ylabel('Top k errors')
+        ax.plot(epochs, top1, label='Top-1 error')
+        ax.plot(epochs, topk, label='Top-k error')
+        ax.legend()
+
+        if stop is None:
+            return
+        else:
+            #plt.show()
+            display.display(plt.gcf())
+            display.clear_output(wait=True)
+
+    
+    return
+
+
+def calculate_loss_weights(dataset):
+    """
+    Calculate loss weights. Loss weigths are used to increase the impact of
+    samples from classes that appear less in the dataset than other classes.
+
+    Args:
+        train_dataloader: dataset from which the class distribution is chosen
+
+    Returns:
+        loss weights according to the dataset (as torch.Tensor)
+    """
+    # 
+    # Create a pandas Dataframe to get class counts
+    label_indices, label_ids, label_names = dataset.get_labels()
+    df_train = pd.DataFrame({'index': label_indices, 'ids': label_ids, 'names': label_names})
+    class_counts = df_train.groupby(['index', 'names']).count()
+    label_names_counts = class_counts.ids.values
+    label_indices_sorted = [item[0] for item in class_counts.ids.index]
+    #loss_weights = max(label_names_counts)/label_names_counts
+    loss_weights = min(label_names_counts)/label_names_counts
+    loss_weights = torch.Tensor(loss_weights)
+
+    return loss_weights

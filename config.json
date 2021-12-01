@@ -1,0 +1,20 @@
+{
+  "model": "resnet18",
+  "work_dir": "./training/test",
+  "train_from_scratch": false,
+  "train_dataset": "./data/dogImages/train",
+  "num_epochs": 2,
+  "batch_size": 32,
+  "lr": 1e-3,
+  "momentum": 0.9,
+  "weight_decay": 1e-5,
+  "lr_scheduler_step_size": 1,
+  "lr_scheduler_fac": 1e-1,
+  "use_loss_weights": true,
+  "optimizer": "adam",
+  "use_cuda": true,
+  "val_dataset": "./data/dogImages/valid",
+  "val_epoch": 1,
+  "val_percentage": 0.3,
+  "val_top_k": 3
+}
