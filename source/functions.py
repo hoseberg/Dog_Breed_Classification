@@ -101,35 +101,6 @@ def transform_image(width = 224, height = 224, mean = [0.485, 0.456, 0.406], std
 
     return transforms.Compose(preprocessing)
 
-    """
-    # interpolate requires 4d tensors
-    squeeze_shape = len(image.shape) == 3
-    if (squeeze_shape):
-        image = image.unsqueeze(0)
-    image = interpolate(image, size=[width, height], mode="nearest", align_corners=False)
-    if (squeeze_shape):
-        image = image.squeeze(0)
-
-    # type conversion
-    dtype_orig = image.dtype
-    if image.dtype != torch.float32:
-        image = transforms.ConvertImageDtype(torch.float32)(image)
-
-    # Ensure that range is in [0, 1]. Note that
-    # transforms.ConvertImageDtype already scales to [0, 1] !
-    if (image.min() < 0.0 or image.max() > 1.0):
-        if dtype_orig == torch.uint8:
-            # Byte [0, 255] --> float [0, 1]
-            image = image.multiply(1.0/255.0)
-        else:
-            image = (image - image.min())/(image.max() - image.min())
-
-    # normalization
-    image = transforms.Normalize(mean, std)(image)
-    
-    return image
-    """
-
 
 def augment_image(width = 224, height = 224, augment_prop=0.0):
     """
@@ -366,6 +337,23 @@ def initialize_model(model_name, num_classes, use_pretrained=True):
     return model, input_size
 
 
+def get_num_classes_from_model_state(model_state_dict):
+    """
+    Get the number of classes from a model state dict. This function only
+    supports models as covered in initialize_model(). It makes use of the fact
+    that the last layer is either a fc-layer with #bias=num_classes, or a
+    convolution layer with #kernels=num_classes. 
+
+    Args:
+        model_state_dict: state dictionary of a model
+
+    Returns:
+        number of classes the model was trained for
+    """
+    last_key = list(model_state_dict.keys())[-1]    
+    return model_state_dict[last_key].shape[0]
+
+
 def train_model(work_dir, model, device, train_dataloader, \
                 loss_func, optimizer, lr_scheduler, num_epochs=25, \
                 evaluater = None, eval_each_k_epoch = 1,
@@ -455,8 +443,7 @@ def train_model(work_dir, model, device, train_dataloader, \
         # 
         # In case the process is stopped
         if (stop is not None and stop()):
-            break
-            
+            break            
             
         # After each epoch, update the scheduler
         lr_scheduler.step()
@@ -468,7 +455,7 @@ def train_model(work_dir, model, device, train_dataloader, \
             log_train['eval_top1'].extend([top_1_error])
             log_train['eval_topk'].extend([top_k_error])
             if plot:
-                print('EVAL: Epoch {:.2f}, top_1: {:.4f}, top_k: {:.4f}'.format(float(epoch), top_1_error, top_k_error))
+                print('EVAL: Epoch {}, top_1: {:.4f}, top_k: {:.4f}'.format(epoch+1, top_1_error, top_k_error))
             # Save to file
             torch.save(log_train, work_dir + '/train_log.pkl')
         
@@ -506,8 +493,11 @@ class Evaluater():
                 preds_topk = preds_topk[0:i*batch_size]
                 break
             # 
-            # Get correct labels indices
-            labels = torch.Tensor(label_indices[label_idx])
+            # Get correct labels indices.
+            # Attention, if batch_size=1, label_idx is no tuple!
+            tmp = label_indices[label_idx]
+            tmp = tmp if tmp.size > 1 else [tmp]
+            labels = torch.Tensor(tmp)
             labels = labels.to(dtype=torch.int)
 
             # Shift data to device
@@ -522,14 +512,16 @@ class Evaluater():
                 # Get top k results for each batch item
                 tmp_preds_top1 = np.zeros(outputs.shape[0])
                 tmp_preds_topk = np.zeros(outputs.shape[0])
-                for b in range(outputs.shape[0]):
-                    top_k = outputs[b].argsort()[0:self.k]
+                num_samples = outputs.shape[0]
+                for b in range(0, num_samples):
+                    # _, preds = torch.max(outputs, 1)
+                    top_k = outputs[b].argsort(descending=True)[0:self.k]
                     top_1 = top_k[0:1]
                     tmp_preds_top1[b] = (labels[b] in top_1)
                     tmp_preds_topk[b] = (labels[b] in top_k)
                 
-                preds_top1[i*batch_size:(i+1)*batch_size] = tmp_preds_top1
-                preds_topk[i*batch_size:(i+1)*batch_size] = tmp_preds_topk
+                preds_top1[i*num_samples:(i+1)*num_samples] = tmp_preds_top1
+                preds_topk[i*num_samples:(i+1)*num_samples] = tmp_preds_topk
                 
         # The dataloader maybe filled batches at the end
         if (len(preds_top1) > len(self.dataloader.dataset)):

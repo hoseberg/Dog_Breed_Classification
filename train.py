@@ -1,11 +1,9 @@
-from genericpath import isdir
-from posixpath import isabs
-import sys
 import os
-import matplotlib.pyplot as plt
-
-import json
 import argparse
+
+import matplotlib.pyplot as plt
+import json
+import time
 
 import torch
 from torch.utils.data import DataLoader
@@ -69,18 +67,17 @@ def create_data_loaders(train_dataset, val_dataset, batch_size):
     """
 
     # Create dataset and loader for training
-    train_dataset = CustomImageDataset(train_dataset, \
-                                       only_first_n_samples = 100)
+    train_dataset = CustomImageDataset(train_dataset)#, only_first_n_samples = 100)
     
     # TODO: REMOVE 100 !!!
     
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, \
-                                shuffle=True)
+                                shuffle=True, num_workers=0)
 
     # Create evaluater class
     val_dataset = CustomImageDataset(val_dataset)
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, \
-                                shuffle=True)
+                                shuffle=True, num_workers=0)
 
     return train_dataloader, val_dataloader
 
@@ -155,8 +152,8 @@ def main():
     else:
         print('\t Train model from scratch')
     class_ids, _ = train_dataloader.dataset.get_classes()
-    model, input_size = initialize_model(model_name, len(class_ids), \
-                            use_pretrained = use_pretrained)
+    model, _ = initialize_model(model_name, len(class_ids), \
+                                use_pretrained = use_pretrained)
 
     device = get_device(cuda = config['use_cuda'])
     print('Chosen device type: {}'.format(device.type))
@@ -196,14 +193,20 @@ def main():
                                         label_smoothing=0.0)
 
     # Run the training
+    start = time.time()
     print('\nTraining started ...')
     num_epochs = config['num_epochs']
+    val_epoch = config['val_epoch']
     model, log_train = train_model(work_dir, model, device, train_dataloader, \
                                 loss_func = loss_func, optimizer = optimizer, \
                                 lr_scheduler = lr_scheduler, \
                                 num_epochs = num_epochs, \
-                                evaluater = evaluater, eval_each_k_epoch = 1,
+                                evaluater = evaluater, \
+                                eval_each_k_epoch = val_epoch,
                                 plot = True, stop = None)
+
+    end = time.time()
+    print('Training took {:.2f} minutes'.format((end - start)/60.0))
 
     # Print the loss and eval plots
     plot_loss(work_dir)
