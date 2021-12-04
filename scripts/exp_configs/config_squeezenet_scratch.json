@@ -1,0 +1,21 @@
+{
+  "model": "squeezenet",
+  "work_dir": "../../training/squeezenet_scratch",
+  "train_from_scratch": true,
+  "train_dataset": "../../data/dogImages/train",
+  "val_dataset": "../../data/dogImages/valid",
+  "test_dataset": "../../data/dogImages/test",
+  "num_epochs": 30,
+  "batch_size": 32,
+  "lr": 1e-3,
+  "momentum": 0.9,
+  "weight_decay": 1e-5,
+  "lr_scheduler_step_size": 15,
+  "lr_scheduler_fac": 1e-1,
+  "use_loss_weights": true,
+  "optimizer": "sgd",
+  "use_cuda": true,
+  "val_epoch": 3,
+  "val_percentage": 0.33,
+  "val_top_k": 3
+}

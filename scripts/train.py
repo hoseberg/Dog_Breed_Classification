@@ -1,9 +1,25 @@
-import os
-import argparse
+# ****************************************************************************
+#  train.py
+# ****************************************************************************
+#
+#  Author:          Horst Osberger
+#  Description:     Training script to run a single training on a given
+#                   dataset and model.
+#                   The parameters can either be given by a config-file or
+#                   separately.
+#
+#  (c) 2021 by Horst Osberger
+# ****************************************************************************
 
+import os
+import sys
+import argparse
 import matplotlib.pyplot as plt
 import json
 import time
+
+# Add parent folder to include paths
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import torch
 from torch.utils.data import DataLoader
@@ -11,14 +27,16 @@ from torch.utils.data import DataLoader
 from source.functions import CustomImageDataset, Evaluater
 from source.functions import initialize_model, train_model, get_device, \
                              calculate_loss_weights, plot_loss, plot_eval
+from source.functions import transform_image, augment_image
+from source.functions import get_base_folder, make_abs_path
 
 
 def create_folder(directory):
     """
-    Create a directory
+    Create a directory.
 
     Args:
-    directory: Path to directory that should be created
+        directory: Path to directory that should be created
     """
     try:
         os.mkdir(directory)
@@ -39,7 +57,7 @@ def create_folder(directory):
 
 def create_work_dir(work_dir):
     """
-    Helper for main, checks and creates the working directory
+    Helper for main, checks and creates the working directory.
 
     Args:
         work_dir: Path to work_dir that should be created
@@ -55,7 +73,7 @@ def create_work_dir(work_dir):
 
 def create_data_loaders(train_dataset, val_dataset, batch_size):
     """
-    Create the data loaders for training and validation
+    Create the data loaders for training and validation.
 
     Args:
         train_dataset: Path to training dataset
@@ -63,19 +81,20 @@ def create_data_loaders(train_dataset, val_dataset, batch_size):
         batch_size: Used batch size
 
     Returns:
-        training and validation dataloaders
+        Training and validation dataloaders
     """
 
     # Create dataset and loader for training
-    train_dataset = CustomImageDataset(train_dataset)#, only_first_n_samples = 100)
-    
-    # TODO: REMOVE 100 !!!
+    train_dataset = CustomImageDataset(train_dataset, \
+                            transform = transform_image(), \
+                            augment = augment_image())
     
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, \
                                 shuffle=True, num_workers=0)
 
     # Create evaluater class
-    val_dataset = CustomImageDataset(val_dataset)
+    val_dataset = CustomImageDataset(val_dataset, \
+                            transform = transform_image())
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, \
                                 shuffle=True, num_workers=0)
 
@@ -86,25 +105,24 @@ def get_config(config_file):
     """
     Get a (adapted) config dict from the config json file.
     One adaption here is, that relative file paths are changed to absolute
-    paths
+    paths.
 
     Args:
         config_file: Path to the json config file
 
     Returns:
-        Maybe adapted config file
+        Adapted config file
     """
     # Read in the config file
     with open(config_file) as json_file:
         config = json.load(json_file)
 
     # Change paths to be absolute...
-    if (not os.path.isabs(config['train_dataset'])):
-        config['train_dataset'] = os.path.join(os.getcwd(), config['train_dataset'])
-    if (not os.path.isabs(config['val_dataset'])):
-        config['val_dataset'] = os.path.join(os.getcwd(), config['val_dataset'])
-    if (not os.path.isabs(config['work_dir'])):
-        config['work_dir'] = os.path.join(os.getcwd(), config['work_dir'])
+    base_folder = get_base_folder(config_file)
+    config['train_dataset'] = make_abs_path(base_folder, config['train_dataset'])
+    config['val_dataset'] = make_abs_path(base_folder, config['val_dataset'])
+    config['test_dataset'] = make_abs_path(base_folder, config['test_dataset'])
+    config['work_dir'] = make_abs_path(base_folder, config['work_dir'])
 
     return config
 
@@ -127,7 +145,8 @@ def main():
     # Create working directory that will hold all the trainig progress
     # and results.
     # In addition, dump the config file to the folder for reproducibility
-    work_dir = config['work_dir']
+    base_folder = get_base_folder(args.config_file)
+    work_dir = make_abs_path(base_folder, config['work_dir'])
     create_work_dir(work_dir)
     with open(os.path.join(work_dir, 'config.json'), 'w') as f:
         json.dump(config, f, indent=4)
@@ -209,12 +228,12 @@ def main():
     print('Training took {:.2f} minutes'.format((end - start)/60.0))
 
     # Print the loss and eval plots
-    plot_loss(work_dir)
-    plt.savefig(os.path.join(work_dir, 'loss.png'), bbox_inches='tight')
-    plt.close
-    plot_eval(work_dir)
-    plt.savefig(os.path.join(work_dir, 'eval.png'), bbox_inches='tight')
-    plt.close
+    if plot_loss(os.path.join(work_dir, 'train_log.pkl')) is not None:
+        plt.savefig(os.path.join(work_dir, 'loss.png'), bbox_inches='tight')
+        plt.close
+    if plot_eval(os.path.join(work_dir, 'train_log.pkl')) is not None:
+        plt.savefig(os.path.join(work_dir, 'eval.png'), bbox_inches='tight')
+        plt.close
 
     print('\nTraining completed !')
     return

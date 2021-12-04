@@ -1,39 +1,108 @@
+# ****************************************************************************
+#  functions.py
+# ****************************************************************************
+#
+#  Author:          Horst Osberger
+#  Description:     Helper functions and classes for DL applications.
+#
+#  (c) 2021 by Horst Osberger
+# ****************************************************************************
+
+import os
 import numpy as np
 from glob import glob
-import os
 from numpy.core.fromnumeric import squeeze
 import pandas as pd
-import math
 import time
 
 from IPython import display
-
-from PIL import Image
 import matplotlib.pyplot as plt
 
 from sklearn.datasets import load_files       
 
 import torch
 from torch.utils.data import Dataset
-from torch.utils.data import DataLoader
-#from torch.nn.functional import interpolate
 import torch.nn as nn
-
 from torchvision import transforms
 from torchvision.io import read_image
 import torchvision.models as models
 
 
+def get_base_folder(file_path = None):
+    """
+    Helper to get the correct base folder for relative paths.
+    This might be required since our CustomImageDataset requires absolut paths,
+    however, paths in a config file might be relative (to the config itself).
+    If no (config) file is given, it can be assumed that paths are absolute or
+    relative to where the script is called from.
+
+    Args: 
+        file_path: Path to a file (e.g., config file)
+
+    Returns:
+        Either the parent's absolute path of the file_path, or os.getcwd()
+    """
+    if file_path is None:
+        return os.getcwd()
+
+    # Get parent folder of file
+    if not os.path.isfile(file_path):
+        raise Exception('Param {} must be a file, but is not'.format(file_path))
+
+    file_path = os.path.abspath(file_path)
+    return os.path.split(file_path)[0]
+
+
+def make_abs_path(base_folder, file_path):
+    """
+    Helper script to return correct absolut path
+
+    Args:
+        file_path: Path to a file
+        base_folder: Excepted folder the file_path is relative to
+
+    Returns:
+        Absolute file path of file_path
+    """
+    if (not os.path.isabs(file_path)):
+        file_path = os.path.join(base_folder, file_path)
+
+    return file_path
+
+
 def import_data(image_dir):
+    """
+    From a given directory, load all image files and identify class labels.
+    It is assumed that for each class, a separate folder exists that has either
+    the form
+        <class_name>
+    or 
+        <class_id.class_name>
+    In the first case, a class id is assigned from 0 to #(class_names)-1 for. 
+    each class. In the second case, the folder name is splitted and the first
+    part is chosen as class id whereas the second one is chosen as class name.
+
+    Args:
+        image_dir: Folder containing all the images to be loaded
+    Returns:
+        class_ids:      List of (unique) class ids
+        class_names:    List of (unique) class names
+        file_path:      List of all file paths
+        label_index:    List of indices to match entries in file_path with
+                        label ids and label names. Same length as file_path.
+        label_id:       List of label ids. Same length as file_path.
+        label_name:     List of label names. Same length as file_path.
+    """
     # 
-    # load_files returns a data struct/bundle with 
-    # index-like target, filenames, and target name.
-    #       target_names... corresponds to class names, hence is a 
-    #                       sorted list with unique names of the labels.
-    #                       length = Number of classes
-    #       targets...  gives the position of each label in the filenames array
-    #                   length = Number of total images
-    #       filenames... 
+    # Let us use sklearn's datasets.load_files() function. This function
+    # returns a data struct/bundle with index-like target, filenames, 
+    # and target name.
+    #   target_names... Corresponds to class names, hence is a 
+    #                   sorted list with unique names of the labels.
+    #                   Length = Number of classes
+    #   target... Gives the position of each label in the filenames array.
+    #             Length = Number of total images
+    #   filenames... Names of the files. Length = Number of total images
     data = load_files(image_dir, load_content = False)
     targets = data['target']
     target_names = data['target_names']
@@ -49,9 +118,9 @@ def import_data(image_dir):
             item_id = i
             item_label = target_name
         else:
-            # Try to exract label ids and label/class names from folder.
-            # In this case it is assumed that the label is given in the format 
-            #    <label_id>.<label_name>
+            # Try to exract class ids and class names from folder.
+            # In this case it is assumed that the info is given in the format 
+            #    <class_id>.<class_name>
             try:
                 item_id = int(item_split[0])
                 item_label = '.'.join(item_split[1:])
@@ -83,13 +152,14 @@ def transform_image(width = 224, height = 224, mean = [0.485, 0.456, 0.406], std
     Default values are chosen to fit imagenet pretrained models.
 
     Args:
-        width: required image width
-        height: required image height
-        mean: tuple, for each channel containing required mean
-        std: tuple, for each channel containiner required standard deviation
+        width:  Required image width
+        height: Required image height
+        mean:   Tuple, for each channel containing required mean
+        std:    Tuple, for each channel containiner required standard deviation
 
     Returns:
-        transformations for image scaled to [0,1], normalized, and resized to [3, hight, width]
+        Transformations to scale image to [0,1], normalize, and resize
+        it to [3, height, width]
     """
     # Image preprocessing transform.
     preprocessing = []
@@ -104,13 +174,15 @@ def transform_image(width = 224, height = 224, mean = [0.485, 0.456, 0.406], std
 
 def augment_image(width = 224, height = 224, augment_prop=0.0):
     """
-    Randomly augment an image
+    Randomly augment an image.
 
     Args:
-        augment_prop: float in [0,1], gives probability for augmentation
+        width:          Required image width
+        height:         Required image height
+        augment_prop:   float in [0,1], gives probability for augmentation
 
     Returns:
-        augmented image
+        Augmented image
     """
     # Image preprocessing transform.
     preprocessing = []
@@ -119,21 +191,32 @@ def augment_image(width = 224, height = 224, augment_prop=0.0):
         # Random rotation does not have a random state...
         if (augment_prop > np.random.random(1)[0]):
             degrees = 5.0
-            # Add symmetric padding to avoid boarder issues
-            #padding = int(height*np.tan(math.radians(degrees)))
-            #preprocessing.append(transforms.Pad(padding, padding_mode='symmetric'))
             preprocessing.append(transforms.RandomRotation(
                 degrees=degrees, center=[height/2, width/2],
                 expand=False, fill=0))
-            # Back to correct image size
-            #preprocessing.append(transforms.Resize((height, width)))
 
     return transforms.Compose(preprocessing)
 
 
 class CustomImageDataset(Dataset):
+    """
+    Child class of Dataset for custom datasets.
+    """
     def __init__(self, img_dir, transform = transform_image(), augment = None,\
                  only_first_n_samples = None, cache_size = 0.0):
+        """
+        Initialize the custom dataset.
+
+        Args:
+            img_dir:    Image directory as required for import_data()
+            transform:  Transformations to preprocess raw sample for models
+            augment:    Augmentation functions
+            only_first_n_samples: If set, only first n samples are selected
+                                  (For testing issues)
+            cache_size: In GB. If set >0.0, this is the maximum memory that
+                        can be used for caching data. Only usable if Dataloader
+                        that uses this class has num_workers = 0.
+        """
         # 
         # We require absolut path
         if not os.path.isabs(img_dir):
@@ -160,6 +243,10 @@ class CustomImageDataset(Dataset):
         self.cache_index_list = []
 
     def __len__(self):
+        """
+        Returns:
+            Number of samples in the dataset.
+        """
         if (type(self.only_first_n_samples) == type(1)):
             return min(self.only_first_n_samples, len(self.file_path))
         else:
@@ -167,7 +254,12 @@ class CustomImageDataset(Dataset):
 
     def __getitem__(self, idx):
         """
-        This function must return CHW format
+        This function must return samples in CHW format.
+
+        Args:
+            idx: Index of the requested sample
+        Returns:
+            Batch of images (image) and the associated label indices (idx)
         """
         # 
         if (self.use_cache and self.cache_initialized and idx in self.cache_index_list):
@@ -227,18 +319,31 @@ class CustomImageDataset(Dataset):
         return image, idx
     
     def get_classes(self):
+        """
+        Returns:
+            List of class names
+        """
         return self.class_ids, self.class_names
 
     def get_labels(self):
+        """
+        Returns:
+            Label indices, ids, and names as described in import_data() 
+        """
         return self.label_index, self.label_id, self.label_name
     
     def get_file_path(self):
+        """
+        Returns:
+            List of file paths
+        """
         return self.file_path
     
     def set_preprocessed_data(self, data):
         """
-        Set preprocessed data as a torch.Tensor.
-        Data is not checked! 
+        Set preprocessed data as a torch.Tensor that can be used for data
+        caching.
+        Attention: Data is not checked!
         """
         if (type(data) is not torch.Tensor):
             raise ValueError('data must be torch.Tensor')
@@ -251,6 +356,14 @@ class CustomImageDataset(Dataset):
 
 
 def get_device(cuda = True):
+    """
+    Get compute device.
+
+    Args:
+        cuda: If set to True, a CUDA capable GPU is requested
+    Returns:
+        Either a CPU or GPU device.
+    """
     if cuda and not torch.cuda.is_available():
         raise ValueError("Requested cuda device is not available")
 
@@ -260,11 +373,20 @@ def get_device(cuda = True):
 
 def initialize_model(model_name, num_classes, use_pretrained=True):
     """
+    Initialize models from the pytorch model zoo.
     All pre-trained models expect input images normalized in the same 
     way, i.e. mini-batches of 3-channel RGB images of shape (3 x H x W), 
     where H and W are expected to be at least 224. The images have to 
     be loaded in to a range of [0, 1] and then normalized using 
     mean = [0.485, 0.456, 0.406] and std = [0.229, 0.224, 0.225].
+
+    Args:
+        model_name: Model name requested from the model zoo
+        num_classes: Number of classes set to the model
+        use_pretrained: If True, pretrained weigths (pretrained on ImageNet)
+                        are downloaded and set to the model.
+    Returns:
+        Requested model
     """
     model = None
     input_size = 0
@@ -283,17 +405,8 @@ def initialize_model(model_name, num_classes, use_pretrained=True):
         """
         model = models.densenet121(pretrained=use_pretrained)
         num_ftrs = model.classifier.in_features
-        has_bias = model.fc.bias is not None
+        has_bias = model.classifier.bias is not None
         model.classifier = nn.Linear(num_ftrs, num_classes, has_bias)
-        input_size = 224
-
-    elif model_name == "googlenet":
-        """ Googlenet
-        """
-        model = models.googlenet(pretrained=use_pretrained)
-        num_ftrs = model.fc.in_features
-        has_bias = model.fc.bias is not None
-        model.fc = nn.Linear(num_ftrs, num_classes, has_bias)
         input_size = 224
 
     elif model_name == "resnet18":
@@ -319,7 +432,7 @@ def initialize_model(model_name, num_classes, use_pretrained=True):
         """
         model = models.vgg11_bn(pretrained=use_pretrained)
         num_ftrs = model.classifier[6].in_features
-        has_bias = model.fc.bias is not None
+        has_bias = model.classifier[6].bias is not None
         model.classifier[6] = nn.Linear(num_ftrs,num_classes, has_bias)
         input_size = 224
 
@@ -345,10 +458,10 @@ def get_num_classes_from_model_state(model_state_dict):
     convolution layer with #kernels=num_classes. 
 
     Args:
-        model_state_dict: state dictionary of a model
+        model_state_dict: State dictionary of a model
 
     Returns:
-        number of classes the model was trained for
+        Number of classes the model was trained for
     """
     last_key = list(model_state_dict.keys())[-1]    
     return model_state_dict[last_key].shape[0]
@@ -363,7 +476,7 @@ def train_model(work_dir, model, device, train_dataloader, \
     TODO: Write doc
     """
     #
-    # Initialize the lod dict for training
+    # Initialize the log dict for training
     # This dict keeps the main information of the training progress. 
     log_train = dict({'num_epochs': num_epochs, \
                       'train_epoch': [], 'train_loss': [], \
@@ -469,6 +582,9 @@ def train_model(work_dir, model, device, train_dataloader, \
 
 
 class Evaluater():
+    """
+    TODO: Write doc
+    """
     def __init__(self, dataloader, k, percentage = 1.0):
         self.dataloader = dataloader
         self.k = k
@@ -609,6 +725,53 @@ def print_eval(work_dir, sleep_time = 0, stop = None):
     return plt
 
 
+def plot_loss(train_log_file):
+    # 
+    try:
+        train_log = torch.load(train_log_file)
+    except:
+        # no file, just return None
+        return None
+
+    epochs = train_log['train_epoch']
+    loss = train_log['train_loss']
+    # 
+    fig = plt.figure()
+    fig.suptitle('Training loss', fontsize=14, fontweight='bold')
+    ax = fig.add_subplot(1,1,1)
+    ax.set_xlabel('Epochs')
+    ax.set_ylabel('Loss')
+    ax.plot(epochs, loss)
+    #plt.xticks(rotation=45, ha='right')
+    
+    return (fig, ax)
+
+
+def plot_eval(train_log_file):
+    # 
+    try:
+        train_log = torch.load(train_log_file)
+    except:
+        # no file, just return None
+        return None
+
+    epochs = train_log['eval_epoch']
+    top1 = train_log['eval_top1']
+    topk = train_log['eval_topk']
+    # 
+    fig = plt.figure()
+    fig.suptitle('Evaluation', fontsize=14, fontweight='bold')
+    ax = fig.add_subplot(1,1,1)
+    ax.set_xlabel('Epochs')
+    ax.set_ylabel('Top k errors')
+    ax.plot(epochs, top1, label='Top-1 error')
+    ax.plot(epochs, topk, label='Top-k error')
+    ax.legend()
+            
+    return (fig, ax)
+
+
+"""
 def plot_loss(work_dir, sleep_time = 0, stop = None):
     # 
     while (True):
@@ -684,8 +847,8 @@ def plot_eval(work_dir, sleep_time = 0, stop = None):
             display.display(plt.gcf())
             display.clear_output(wait=True)
 
-    
     return
+"""
 
 
 def calculate_loss_weights(dataset):
@@ -694,10 +857,10 @@ def calculate_loss_weights(dataset):
     samples from classes that appear less in the dataset than other classes.
 
     Args:
-        train_dataloader: dataset from which the class distribution is chosen
+        train_dataloader: Dataset from which the class distribution is chosen
 
     Returns:
-        loss weights according to the dataset (as torch.Tensor)
+        Loss weights according to the dataset (as torch.Tensor)
     """
     # 
     # Create a pandas Dataframe to get class counts
