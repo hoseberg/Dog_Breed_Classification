@@ -100,7 +100,7 @@ def main():
     num_classes = get_num_classes_from_model_state(state_dict)
     model, input_size = initialize_model(model_name, num_classes, \
                                          use_pretrained = False)
-    model.load_state_dict(torch.load(model_state_dict))
+    model.load_state_dict(state_dict)
     model.eval()
 
     # Read in model and preprocess
@@ -111,8 +111,8 @@ def main():
     device = get_device(cuda = use_cuda)
 
     # Shift to device and predict
-    model.to(device)
-    img.to(device)
+    model = model.to(device)
+    img = img.to(device)
     start = time.time()
     output = model(img)
     _, preds = torch.max(output, 1)
@@ -124,7 +124,7 @@ def main():
     if (class_names is not None):
         print('\t class id:\t\t{}'.format(class_ids[preds[0]]))
         print('\t class name:\t\t{}'.format(class_names[preds[0]]))
-    print('\t inference time:\t{:.2f} ms'.format(1000*(end - start)))
+    print('\t execution time:\t{:.2f} ms'.format(1000*(end - start)))
 
     return
 

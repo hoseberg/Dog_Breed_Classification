@@ -1,0 +1,99 @@
+{% extends "index.html" %}
+{% block title %}Inference{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+    <div class="container">
+        <h1 class="text-center">Predict the class of an image </h1>
+        <!--
+            <h2 class="text-left">Select an image</h2>
+            <form method="post" enctype=multipart/form-data>
+                <div class="input-group">
+                    <div class="custom-file">
+                    <label class="custom-file-label" for="inputGroupFile04"></label>
+                    <input type="file" class="custom-file-input" name="file" placeholder="Choose image to predict" id="inputGroupFile04">
+                    </div>
+                </div>
+                <div>
+                    <button type="submit" value=Upload class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        -->
+        <p class="text-left">In the following, you can apply a model for any image of comon type (e.g., .jpeg, .png).
+            <br>To do so, you need to select two things:
+        </p>
+        <ul style="list-style-type:disc;">
+            <li>A model that is used for prediction</li>
+            <li>An image you want to predict the class for</li>
+        </ul>
+        <p class="text-left">To select an image is self-explanatory...
+            <br>To select the model, you just need to browse for the <b>config file (.json)</b> that is placed in
+            <br>working directory of your training. Note that the paths to the datasets given in the config.json file 
+            <br>must be <b>absolute paths</b>!. However, this should be guaranteed by the <b>train.py</b> script anyway.
+        </p>
+        <br>
+        <!-- Load model -->
+        <form method=post enctype=multipart/form-data>
+            <h4 class="text-left">Select the config file containing the model information</h4>
+            <div class="custom-file">
+                <input type=file name=config>
+                <button onclick="cursor_wait()" type="submit" value=Upload class="btn btn-primary">Load model from config</button>
+            </div>
+        </form>
+        <h6>Loaded model: <b><i>{{model_name}}</i></b></h6>
+        <br>
+        <!-- Select image -->
+        <form method=post enctype=multipart/form-data>
+            <h4 class="text-left">Select an image and device (default: CPU)</h4>
+            <div>
+            <div class="custom-control custom-checkbox">
+                {% if is_cuda %}
+                <input type="checkbox" id="customRadio" name="use_cuda" class="custom-control-input" checked>
+                {% else %}
+                <input type="checkbox" id="customRadio" name="use_cuda" class="custom-control-input">
+                {% endif %}
+                <label class="custom-control-label" for="customRadio">Run on GPU</label>
+            </div>
+            <div class="custom-file">
+                <input type=file name=image>
+                <button onclick="cursor_wait()" type="submit" value=Upload class="btn btn-primary">Predict image</button>
+            </div>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block results %}
+<!-- Error message -->
+{% if error_msg %}
+<div class="container">
+    <h5 class="text-left" style="color: #fc1703"><i>{{error_msg}}</i></h5>
+</div>
+{% endif %}
+<!-- Results -->
+{% if class_name %}
+<div class="row">
+    <div class="col-6">
+        <div class="container">
+            {% for id in ids %}
+                <div id="{{id}}"></div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="col-6">
+        <h5 class="text-left">File: <i>{{img_name}}</i></h5>
+        <h5 class="text-left">Predicted class: <i>{{class_name}}</i></h5>
+        <h5 class="text-left">Execution time: <i>{{exec_time}}</i></h5>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+<!-- Plot -->
+<div class="container" id="cursor_default()">
+    {% for id in ids %}
+        <div id="{{id}}"></div>
+    {% endfor %}
+</div>

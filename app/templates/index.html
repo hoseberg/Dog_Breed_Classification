@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Deep Learning Classification</title>
+    
+    <!-- Use bootstrap library for pretty styling instead of plain CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<body>
+
+<!-- Navigation bar, see https://getbootstrap.com/docs/4.0/components/navbar/ -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="/">DL Classification</a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+            <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
+                <li class="nav-item">
+                  <a class="nav-link" href="https://www.udacity.com">Made with Udacity</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://github.com/udacity/dog-project">Data Dog Project</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://github.com/hoseberg">My GitHub-Repo</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://de.linkedin.com/in/horst-osberger-719ab7107">My LinkedIn</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+<!-- Split page in 2 columns, one with link-buttons and another one with content -->
+<div class="row">
+
+    <!-- Column 1 with logo-links -->
+    <div class="col-1">
+        <div id="follow-me" class="mt-3">
+            <a href="https://www.linkedin.com/in/horst-osberger-719ab7107/">
+                <img src="/static/logos/linkedinlogo.png" alt="linkedin" class="img-fluid mb-4 ml-2">
+            </a>
+            <a href="https://github.com/hoseberg">
+                <img src="/static//logos/githublogo.png" alt="github" class="img-fluid ml-2">
+            </a>
+        </div>
+    </div>
+
+    <!-- Column 2 with Content -->
+    <div class="col-11">
+        {% block content %}
+        <!-- The class "jumbotron" puts everything in a nice gray shaded backroung... -->
+        <div class="jumbotron">
+            <div class="container">
+                <h1 class="text-center">Welcome to my DL Classification workflow </h1>
+                <h2 class="text-left">Introduction</h2>
+                <p class="text-left">TODO
+                    <br>ANOTHER TODO
+                </p>
+
+                <h2 class="text-left">Make your choice</h2>
+                <!-- Add action buttons -->
+                <form action="/predict" method="post">
+                    <button type="submit" class="btn btn-primary">Infer an image</button>
+                </form>
+            </div>
+        </div>
+        {% endblock %}
+
+        {% block results %}
+        {% endblock %}
+    </div>
+</div>
+
+<!-- Javascript to plot plotly plots -->
+<script type="text/javascript">
+    const graphs = {{graphJSON | safe}};
+    const ids = {{ids | safe}};
+    for(let i in graphs) {
+        Plotly.plot(ids[i], graphs[i], graphs[i].layout);
+    }
+</script>
+
+<!-- Javascript to control cursor events -->
+<script language="Javascript">
+	function cursor_wait() {
+		document.body.style.cursor = 'wait';
+	}
+	function cursor_default() {
+		document.body.style.cursor = 'default';
+	}
+</script>
+
+</body>
+</html>
