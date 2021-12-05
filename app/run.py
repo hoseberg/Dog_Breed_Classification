@@ -31,10 +31,9 @@ from torchvision.transforms import ToTensor, ToPILImage
 # Add parent folder to include paths
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from source.functions import CustomImageDataset, Evaluater
-from source.functions import initialize_model, get_device, \
-                             calculate_loss_weights, get_num_classes_from_model_state
-from source.functions import transform_image, augment_image
-from source.functions import get_base_folder, make_abs_path
+from source.functions import transform_image, get_device, make_abs_path
+from source.app_helpers import get_json_from_request, get_image_from_request, \
+                            tensor_to_plotly, check_config, load_model
 
 # Global variables
 model = None
@@ -42,7 +41,6 @@ model_name = ""
 class_names = None
 input_size = 10
 device =  get_device(cuda=False)
-device_cpu = get_device(cuda=False)
 
 # -------------------- #
 # Define flask backend #
@@ -56,52 +54,6 @@ app = Flask(__name__)
 # ---------------- #
 # Helper functions #
 # ---------------- #
-
-def get_file_storage_from_request(request, tag_name):
-    """
-    Helper to get file storage object from flask-request.
-    """
-    if tag_name in request.files:
-        fs = request.files[tag_name]
-        if fs.filename == '':
-            # No file available
-            return None
-        return fs
-    else:
-        # No file available
-        return None
-
-
-def get_json_from_request(request, tag_name):
-    """
-    Helper to get json from file storage object.
-    Either returns the object, an error message, or None if not requested
-    """
-    fs = get_file_storage_from_request(request, tag_name)
-    if fs is None:
-        return None
-
-    if re.search("json", fs.content_type) is not None:
-        json_read = fs.read().decode('utf8').replace("'", '"')
-        return json.loads(json_read)
-    else:
-        return "Invalid format for json file."
-
-
-def get_image_from_request(request, tag_name):
-    """
-    Helper to get PIL image from file storage object
-    Either returns the object, an error message, or None if not requested
-    """
-    fs = get_file_storage_from_request(request, tag_name)
-    if fs is None:
-        return None
-
-    if re.search("image", fs.content_type) is not None:
-        return (fs.filename, Image.open(fs))
-    else:
-        return "Invalid format for image file."
-
 
 def set_device_from_request(request, tag_name):
     """
@@ -122,59 +74,6 @@ def set_device_from_request(request, tag_name):
             return None
         except:
             return "Requested device cannot be selected"
-
-
-def tensor_to_plotly(img):
-    """
-    Helper to transform torch.Tensor image to plotly image
-    """
-    # Ensure that tensor is on CPU
-    if len(img.size()) == 4:
-        img = img.squeeze(0)
-    # For better display, shift to [0,1]
-    img = (img - img.min())/(img.max() - img.min())
-    img_pil = ToPILImage()(img.to(device_cpu))
-    #fig = px.imshow(img_pil)
-    #return fig
-    pl_img = pgo.Image(z=img_pil)
-    return pl_img
-
-def check_config(config):
-    """
-    Helper that checks correctness of config file
-    """
-    # 
-    # Check for required keys
-    required_keys = ["model", "work_dir", "train_dataset", "val_dataset", \
-                     "test_dataset", "val_top_k"]
-    keys = config.keys()
-    valid = True
-    for key in required_keys:
-        valid = valid and (key in keys)
-
-    if not valid:
-        return valid
-    # 
-    # Check for absolute paths
-    valid = valid and os.path.isabs(config["work_dir"])
-    valid = valid and os.path.isabs(config["train_dataset"])
-    valid = valid and os.path.isabs(config["test_dataset"])
-    valid = valid and os.path.isabs(config["val_dataset"])
-
-    return valid
-
-
-def load_model(model_name, model_state_dict_path):
-    """
-    Helper to load a model
-    """
-    state_dict = torch.load(model_state_dict_path)
-    num_classes = get_num_classes_from_model_state(state_dict)
-    model, input_size = initialize_model(model_name, num_classes, \
-                                        use_pretrained = False)
-    model.load_state_dict(state_dict)
-
-    return model, input_size
 
 
 # ------------------- #
@@ -224,9 +123,6 @@ def predict():
         return render_template('predict.html', model_loaded=(model is not None), \
                                 model_name=model_name_loc, error_msg=img)
 
-    # Check if cuda is selected
-    is_cuda = None if device.type == "cpu" else device.type
-
     # Load model from config if requested
     if config is not None:
         valid_config = check_config(config)
@@ -252,7 +148,7 @@ def predict():
 
         # If model and dataset is loaded --> get image
         return render_template('predict.html', model_loaded=(model is not None), \
-                                model_name=model_name_loc, error_msg=error_msg)
+                                model_name=model_name_loc)
 
     # At this point, it is assumed that the user already gave a config
     if (model is None): 
@@ -260,6 +156,9 @@ def predict():
         return render_template('predict.html', model_loaded=(model is not None), \
                                 model_name=model_name_loc, error_msg=error_msg)
 
+    # Check if cuda is selected
+    is_cuda = None if device.type == "cpu" else device.type
+    
     # Read in image and predict
     if img is None:
         error_msg = 'You must provide an image.'

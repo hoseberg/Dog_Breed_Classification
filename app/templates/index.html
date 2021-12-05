@@ -30,7 +30,7 @@
                   <a class="nav-link" href="https://github.com/udacity/dog-project">Data Dog Project</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="https://github.com/hoseberg">My GitHub-Repo</a>
+                  <a class="nav-link" href="https://github.com/hoseberg">My GitHub</a>
                 </li>
                 <li class="nav-item">
                   <a class="nav-link" href="https://de.linkedin.com/in/horst-osberger-719ab7107">My LinkedIn</a>
@@ -62,17 +62,44 @@
         <!-- The class "jumbotron" puts everything in a nice gray shaded backroung... -->
         <div class="jumbotron">
             <div class="container">
-                <h1 class="text-center">Welcome to my DL Classification workflow </h1>
-                <h2 class="text-left">Introduction</h2>
-                <p class="text-left">TODO
-                    <br>ANOTHER TODO
+                <h2 class="text-center">Welcome to my DL Classification workflow </h2>
+                <h4 class="text-left">Introduction</h4>
+                <p class="text-left">
+                    This application can be used to nicely visualize classification predicions
+                    and evaluation results. 
+                    <br>
+                    However, tho do so, you need a trained model. Currently, training
+                    a model is not provided by this application... Sorry for that.
+                    <br>
+                    Therefore, you must train a model <b>before</b>! To do so,
+                    please use the provides script, see
+                </p>
+                <p style="font-family:courier;">scripts/train.py</p>
+                <p class="text-left">
+                    Use the <b>--help</b> option to see more details about your training options.
+                    <br>
+                    The training script will create a working directory that contains all 
+                    the information about the training. The most important file in this
+                    working directory is the <b>config json file</b>. 
+                    You will need to browse for this config file later to load the 
+                    model you want to use for prediction or evaluation.
+                    <br>
+                    So now, let's get started !
                 </p>
 
-                <h2 class="text-left">Make your choice</h2>
+                <h4 class="text-left">What do you want to do?</h4>
                 <!-- Add action buttons -->
+                <div class="container">
                 <form action="/predict" method="post">
-                    <button type="submit" class="btn btn-primary">Infer an image</button>
+                    <button type="submit" class="btn btn-primary">Predict the class of an image</button>
                 </form>
+                </div>
+                <br>
+                <div class="container">
+                <form action="/predict" method="post">
+                    <button type="submit" class="btn btn-primary">Evaluate a model</button>
+                </form>
+                </div>
             </div>
         </div>
         {% endblock %}

@@ -4,32 +4,25 @@
 {% block content %}
 <div class="jumbotron">
     <div class="container">
-        <h1 class="text-center">Predict the class of an image </h1>
-        <!--
-            <h2 class="text-left">Select an image</h2>
-            <form method="post" enctype=multipart/form-data>
-                <div class="input-group">
-                    <div class="custom-file">
-                    <label class="custom-file-label" for="inputGroupFile04"></label>
-                    <input type="file" class="custom-file-input" name="file" placeholder="Choose image to predict" id="inputGroupFile04">
-                    </div>
-                </div>
-                <div>
-                    <button type="submit" value=Upload class="btn btn-primary">Submit</button>
-                </div>
-            </form>
-        -->
-        <p class="text-left">In the following, you can apply a model for any image of comon type (e.g., .jpeg, .png).
-            <br>To do so, you need to select two things:
+        <h2 class="text-center">Predict the class of an image </h2>
+        <p class="text-left">
+            In the following, you can apply a model for any image of comon type (e.g., .jpeg, .png).
+            <br>
+            To do so, you need to select two things:
         </p>
         <ul style="list-style-type:disc;">
             <li>A model that is used for prediction</li>
             <li>An image you want to predict the class for</li>
         </ul>
-        <p class="text-left">To select an image is self-explanatory...
-            <br>To select the model, you just need to browse for the <b>config file (.json)</b> that is placed in
-            <br>working directory of your training. Note that the paths to the datasets given in the config.json file 
-            <br>must be <b>absolute paths</b>!. However, this should be guaranteed by the <b>train.py</b> script anyway.
+        <p class="text-left">
+            To select an image is self-explanatory...
+            <br>
+            To select the model, you just need to browse for the <b>config file (.json)</b> that is placed in
+            the working directory of your training. 
+            <br>
+            Note that the paths to the datasets given in the config.json file 
+            must be <b>absolute paths</b>!. However, this should be guaranteed by the 
+            <b>train.py</b> script anyway.
         </p>
         <br>
         <!-- Load model -->
