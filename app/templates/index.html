@@ -72,7 +72,7 @@
                     a model is not provided by this application... Sorry for that.
                     <br>
                     Therefore, you must train a model <b>before</b>! To do so,
-                    please use the provides script, see
+                    please use the provided script, see
                 </p>
                 <p style="font-family:courier;">scripts/train.py</p>
                 <p class="text-left">
@@ -84,20 +84,21 @@
                     You will need to browse for this config file later to load the 
                     model you want to use for prediction or evaluation.
                     <br>
+                    <br>
                     So now, let's get started !
                 </p>
 
                 <h4 class="text-left">What do you want to do?</h4>
                 <!-- Add action buttons -->
                 <div class="container">
-                <form action="/predict" method="post">
-                    <button type="submit" class="btn btn-primary">Predict the class of an image</button>
-                </form>
+                    <form action="/evaluate" method="post">
+                        <button type="submit" class="btn btn-primary">Evaluate a model</button>
+                    </form>
                 </div>
                 <br>
                 <div class="container">
                 <form action="/predict" method="post">
-                    <button type="submit" class="btn btn-primary">Evaluate a model</button>
+                    <button type="submit" class="btn btn-primary">Predict the class of an image</button>
                 </form>
                 </div>
             </div>

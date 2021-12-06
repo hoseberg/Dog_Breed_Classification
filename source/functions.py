@@ -10,12 +10,8 @@
 
 import os
 import numpy as np
-from glob import glob
-from numpy.core.fromnumeric import squeeze
 import pandas as pd
-import time
 
-from IPython import display
 import matplotlib.pyplot as plt
 
 from sklearn.datasets import load_files       
@@ -125,14 +121,16 @@ def import_data(image_dir):
                 item_id = int(item_split[0])
                 item_label = '.'.join(item_split[1:])
             except:
-                raise ValueError('Image folder does not have valid format. Expecting \'id.name_of_class\'.')
+                raise ValueError('Image folder does not have valid format. '
+                                'Expecting \'id.name_of_class\'.')
                 
         label_id[i] = item_id
         label_name[i] = item_label
 
-    # Now, we have for each file a label and a label_id (that has not to be in range 0, 1, ... !!).
-    # For later training, we need to guarantee that each class (in unqiue(label_name)) is assigned
-    # to a value in range(len(label_id)). This is done here:
+    # Now, we have for each file a label and a label_id (that has not to be
+    # in range 0, 1, ... !!). For later training, we need to guarantee that 
+    # each class (in unqiue(label_name)) is assigned to a value in
+    # range(len(label_id)). This is done here:
     sort_indices = np.argsort(label_id)
     class_ids = np.unique(label_id[sort_indices])
     # 
@@ -140,13 +138,15 @@ def import_data(image_dir):
     # class_indices is simply given by np.arange(len(class_names))
     label_index = np.zeros(len(label_id)).astype(int)
     for i, id in enumerate(class_ids):
-        class_names[i] = [label_name[i_] for i_, x_ in enumerate(label_id) if x_ == id][0]
+        class_names[i] = [label_name[i_] for i_, x_ in enumerate(label_id) \
+                                                    if x_ == id][0]
         label_index[label_id == id] = i
 
     return class_ids, class_names, file_path, label_index, label_id, label_name
 
 
-def transform_image(width = 224, height = 224, mean = [0.485, 0.456, 0.406], std = [0.229, 0.224, 0.225]):
+def transform_image(width = 224, height = 224, mean = [0.485, 0.456, 0.406], \
+                    std = [0.229, 0.224, 0.225]):
     """
     Transformation function for dataloader. 
     Default values are chosen to fit imagenet pretrained models.
@@ -163,7 +163,6 @@ def transform_image(width = 224, height = 224, mean = [0.485, 0.456, 0.406], std
     """
     # Image preprocessing transform.
     preprocessing = []
-
     preprocessing.append(transforms.Resize((height, width)))
     # ConvertImageDtype also put range to [0, 1] !
     preprocessing.append(transforms.ConvertImageDtype(torch.float32))
@@ -220,10 +219,12 @@ class CustomImageDataset(Dataset):
         # 
         # We require absolut path
         if not os.path.isabs(img_dir):
-            raise ValueError('Image dir must be absolute path, but is {}'.format(img_dir))
+            raise ValueError('Image dir must be absolute path, but is {}'\
+                            .format(img_dir))
         # 
         # Load the data
-        class_ids, class_names, file_path, label_index, label_id, label_name = import_data(img_dir)
+        class_ids, class_names, file_path, label_index, label_id, label_name \
+            = import_data(img_dir)
         # 
         self.img_dir = img_dir
         self.class_ids = class_ids
@@ -262,7 +263,8 @@ class CustomImageDataset(Dataset):
             Batch of images (image) and the associated label indices (idx)
         """
         # 
-        if (self.use_cache and self.cache_initialized and idx in self.cache_index_list):
+        if (self.use_cache and self.cache_initialized \
+            and idx in self.cache_index_list):
             image = self.cache[idx]
         else:
             # Read image from file and apply transform
@@ -283,16 +285,24 @@ class CustomImageDataset(Dataset):
                                 else min(len(self.file_path), idx + num_tries)
 
             if (not success):
-                raise ValueError('Image at position {} could not be read'.format(idx_orig))
+                raise ValueError('Image at position {} could not be read'\
+                                .format(idx_orig))
             
-            # We require CHW real images
+            # We require 3-channel CHW real images
             if (len(image.shape) != 3 and len(image.shape) != 4):
-                raise ValueError('Image dimension must be 3 or 4, but is {}'.format(image.shape))
-        
+                raise ValueError('Image dimension must be 3 or 4, but is {}'\
+                                .format(image.shape))
+            # In case of multiy-channel images (with alpha) --> reduce 
+            if (len(image.shape) == 3 and image.shape[0] >= 4):
+                image = image[0:3, :]
+            if (len(image.shape) == 4 and image.shape[1] >= 4):
+                image = image[:, 0:3, :]
+
             # Apply transformation
             image = self.transform(image)
             # Add to cache...
-            if (self.use_cache and self.cache_initialized and idx < self.cache.shape[0]):
+            if (self.use_cache and self.cache_initialized \
+                    and idx < self.cache.shape[0]):
                 self.cache[idx] = image
                 self.cache_index_list.append(idx)
 
@@ -440,7 +450,8 @@ def initialize_model(model_name, num_classes, use_pretrained=True):
         """ Squeezenet
         """
         model = models.squeezenet1_0(pretrained=use_pretrained)
-        model.classifier[1] = nn.Conv2d(512, num_classes, kernel_size=(1,1), stride=(1,1))
+        model.classifier[1] = nn.Conv2d(512, num_classes, kernel_size=(1,1), \
+                                        stride=(1,1))
         model.num_classes = num_classes
         input_size = 224
 
@@ -473,7 +484,24 @@ def train_model(work_dir, model, device, train_dataloader, \
                 plot = False,
                 stop = None):
     """
-    TODO: Write doc
+    Train a model.
+
+    Args:
+        work_dir:           Working directory. All training info is saved to
+                            this directory.
+        model:              Model to be trained
+        device:             Device on which the model is trained
+        train_dataloader:   Dataloader that serves for training inputs/targets
+        loss_func:          Loss used for training
+        optimizer:          Optimizer used for optimization
+        lr_scheduler:       Learning rate scheduling
+        num_epochs:         Number of epochs to be trained
+        evaluater:          Evaluation class to evaluate intermediate model
+        eval_each_k_epoch:  At each k-th epoch, the evaluation is done
+        plot:               If True, results are printed to console
+        stop:               Lambda function that can be used for interruption
+    Returns:
+        Trained model and training log.
     """
     #
     # Initialize the log dict for training
@@ -545,7 +573,8 @@ def train_model(work_dir, model, device, train_dataloader, \
                 log_train['train_epoch'].extend([curr_epoch])
                 log_train['train_loss'].extend([curr_loss])
                 if plot:
-                    print('Epoch {:.2f}, Loss: {:.4f}'.format(curr_epoch, curr_loss))
+                    print('Epoch {:.2f}, Loss: {:.4f}'\
+                            .format(curr_epoch, curr_loss))
                 running_loss = 0.0
                 running_iters = 0
                 # Save to file
@@ -568,7 +597,8 @@ def train_model(work_dir, model, device, train_dataloader, \
             log_train['eval_top1'].extend([top_1_error])
             log_train['eval_topk'].extend([top_k_error])
             if plot:
-                print('EVAL: Epoch {}, top_1: {:.4f}, top_k: {:.4f}'.format(epoch+1, top_1_error, top_k_error))
+                print('EVAL: Epoch {}, top_1: {:.4f}, top_k: {:.4f}'\
+                        .format(epoch+1, top_1_error, top_k_error))
             # Save to file
             torch.save(log_train, work_dir + '/train_log.pkl')
         
@@ -576,22 +606,36 @@ def train_model(work_dir, model, device, train_dataloader, \
         top_l_errors = log_train['eval_top1']
         if (len(top_l_errors) == 1 or \
             (len(top_l_errors) > 2 and (top_l_errors[-1] < top_l_errors[-2]))):
-            torch.save(model.state_dict(), work_dir + '/best_model_state_dict.pt')
+            torch.save(model.state_dict(), \
+                        work_dir + '/best_model_state_dict.pt')
     
     return model, log_train
 
 
 class Evaluater():
     """
-    TODO: Write doc
+    Evaluation class.
     """
     def __init__(self, dataloader, k, percentage = 1.0):
+        """
+        Initialize evaluation class.
+        Args:
+            dataloader: Dataloader the evaluation runs on
+            k:          k for top-l error
+            percentage: Percentage how many samples should be used for
+                        evaluation
+        """
         self.dataloader = dataloader
         self.k = k
         self.percentage = percentage
         
     def eval(self, model, device):
-        
+        """
+        Run evaluation on a model and a device.
+        Args:
+            model:  Model to be evaluated
+            device: Device the evaluation should run on
+        """
         # Set model to evaluate mode
         model.eval()
         model = model.to(device)
@@ -651,81 +695,14 @@ class Evaluater():
         return accuracy, top_1_error, top_k_error
 
 
-def print_loss(work_dir, sleep_time = 0, stop = None):
-    # 
-    while (True):
-        if (stop is not None and stop()):
-            break
-
-        time.sleep(sleep_time)
-
-        try:
-            train_log = torch.load(work_dir + '/train_log.pkl')
-        except:
-            # no file
-            if stop is None:
-                return
-            else:
-                continue
-
-        epochs = train_log['train_epoch']
-        loss = train_log['train_loss']
-        # 
-        plt.plot(epochs, loss, '-r')
-        plt.xlabel('Epochs')
-        plt.ylabel('Loss')
-        #plt.xticks(rotation=45, ha='right')
-        plt.suptitle('Training loss')
-
-        if stop is None:
-            return plt
-        else:
-            #plt.show()
-            display.display(plt.gcf())
-            display.clear_output(wait=True)
-    
-    return plt
-
-def print_eval(work_dir, sleep_time = 0, stop = None):
-    # 
-    while (True):
-        if (stop is not None and stop()):
-            break
-
-        time.sleep(sleep_time)
-
-        try:
-            train_log = torch.load(work_dir + '/train_log.pkl')
-        except:
-            # no file
-            if stop is None:
-                return
-            else:
-                continue
-
-        epochs = train_log['eval_epoch']
-        top1 = train_log['eval_top1']
-        topk = train_log['eval_topk']
-        # 
-        plt.plot(epochs, top1)
-        plt.plot(epochs, topk)
-        plt.xlabel('Epochs')
-        plt.ylabel('Top k errors')
-        #plt.xticks(rotation=45, ha='right')
-        plt.suptitle('Training evaluation')
-
-        if stop is None:
-            return plt
-        else:
-            #plt.show()
-            display.display(plt.gcf())
-            display.clear_output(wait=True)
-
-    
-    return plt
-
-
 def plot_loss(train_log_file):
+    """
+    Create the plot for the loss.
+    Args:
+        train_log_file: Path to training log containing training info
+    Returns:
+        Matplotlib pyplot, or None, if no log gile is given
+    """
     # 
     try:
         train_log = torch.load(train_log_file)
@@ -742,12 +719,18 @@ def plot_loss(train_log_file):
     ax.set_xlabel('Epochs')
     ax.set_ylabel('Loss')
     ax.plot(epochs, loss)
-    #plt.xticks(rotation=45, ha='right')
     
     return (fig, ax)
 
 
 def plot_eval(train_log_file):
+    """
+    Create the plot for the evaluation.
+    Args:
+        train_log_file: Path to training log containing training info
+    Returns:
+        Matplotlib pyplot, or None, if no log gile is given
+    """
     # 
     try:
         train_log = torch.load(train_log_file)
@@ -771,86 +754,6 @@ def plot_eval(train_log_file):
     return (fig, ax)
 
 
-"""
-def plot_loss(work_dir, sleep_time = 0, stop = None):
-    # 
-    while (True):
-        if (stop is not None and stop()):
-            break
-
-        time.sleep(sleep_time)
-
-        try:
-            train_log = torch.load(work_dir + '/train_log.pkl')
-        except:
-            # no file
-            if stop is None:
-                return
-            else:
-                continue
-
-        epochs = train_log['train_epoch']
-        loss = train_log['train_loss']
-        # 
-        fig = plt.figure()
-        fig.suptitle('Training loss', fontsize=14, fontweight='bold')
-        ax = fig.add_subplot(1,1,1)
-        ax.set_xlabel('Epochs')
-        ax.set_ylabel('Loss')
-        ax.plot(epochs, loss)
-        #plt.xticks(rotation=45, ha='right')
-
-        if stop is None:
-            return
-        else:
-            #plt.show()
-            display.display(plt.gcf())
-            display.clear_output(wait=True)
-    
-    return
-
-
-def plot_eval(work_dir, sleep_time = 0, stop = None):
-    # 
-    while (True):
-        if (stop is not None and stop()):
-            break
-
-        time.sleep(sleep_time)
-
-        try:
-            train_log = torch.load(work_dir + '/train_log.pkl')
-        except:
-            # no file
-            if stop is None:
-                return
-            else:
-                continue
-
-        epochs = train_log['eval_epoch']
-        top1 = train_log['eval_top1']
-        topk = train_log['eval_topk']
-        # 
-        fig = plt.figure()
-        fig.suptitle('Evaluation', fontsize=14, fontweight='bold')
-        ax = fig.add_subplot(1,1,1)
-        ax.set_xlabel('Epochs')
-        ax.set_ylabel('Top k errors')
-        ax.plot(epochs, top1, label='Top-1 error')
-        ax.plot(epochs, topk, label='Top-k error')
-        ax.legend()
-
-        if stop is None:
-            return
-        else:
-            #plt.show()
-            display.display(plt.gcf())
-            display.clear_output(wait=True)
-
-    return
-"""
-
-
 def calculate_loss_weights(dataset):
     """
     Calculate loss weights. Loss weigths are used to increase the impact of
@@ -865,11 +768,10 @@ def calculate_loss_weights(dataset):
     # 
     # Create a pandas Dataframe to get class counts
     label_indices, label_ids, label_names = dataset.get_labels()
-    df_train = pd.DataFrame({'index': label_indices, 'ids': label_ids, 'names': label_names})
+    df_train = pd.DataFrame({'index': label_indices, 'ids': label_ids, \
+                             'names': label_names})
     class_counts = df_train.groupby(['index', 'names']).count()
     label_names_counts = class_counts.ids.values
-    label_indices_sorted = [item[0] for item in class_counts.ids.index]
-    #loss_weights = max(label_names_counts)/label_names_counts
     loss_weights = min(label_names_counts)/label_names_counts
     loss_weights = torch.Tensor(loss_weights)
 

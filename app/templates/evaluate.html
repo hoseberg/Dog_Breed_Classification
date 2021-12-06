@@ -1,0 +1,81 @@
+{% extends "index.html" %}
+{% block title %}Evaluate{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+    <div class="container">
+        <h2 class="text-center">Evaluate a model </h2>
+        <p class="text-left">
+            In the following, you can evaluate a model and visualize the training results.
+            <br>
+            To do so, you just need to select the model and the test dataset you 
+            want to run the evaluation on. 
+            To select the model, you just need to browse for the <b>config file (.json)</b> 
+            that is placed in the working directory of your training. 
+            From this config file, also the test dataset is selected. 
+            <br>
+            Note that the paths to the datasets given in the config.json file 
+            must be <b>absolute paths</b>!. However, this should be guaranteed by the 
+            <b>train.py</b> script anyway.
+        </p>
+        <br>
+        <!-- Load model -->
+        <form method=post enctype=multipart/form-data>
+            <h4 class="text-left">Select the config file containing the model and dataset information</h4>
+            <div>
+            <div class="custom-control custom-checkbox">
+                {% if is_cuda %}
+                <input type="checkbox" id="customRadio" name="use_cuda" class="custom-control-input" checked>
+                {% else %}
+                <input type="checkbox" id="customRadio" name="use_cuda" class="custom-control-input">
+                {% endif %}
+                <label class="custom-control-label" for="customRadio">Run on GPU</label>
+            </div>
+            <div class="custom-file">
+                <input type=file name=config>
+                <button onclick="cursor_wait()" type="submit" value=Upload class="btn btn-primary">Load and evaluate model from config (This may take a while ...)</button>
+            </div>
+            </div>
+        </form>
+        <h6>Loaded model: <b><i>{{model_name}}</i></b></h6>
+    </div>
+</div>
+{% endblock %}
+
+{% block results %}
+<!-- Error message -->
+{% if error_msg %}
+<div class="container">
+    <h5 class="text-left" style="color: #fc1703"><i>{{error_msg}}</i></h5>
+</div>
+{% endif %}
+<!-- Results -->
+{% if ids %}
+<div class="row">
+    <div class="col-6">
+        <h5 class="text-left"><i>{{accuracy}}</i></h5>
+        <h5 class="text-left"><i>{{top_1_error}}</i></h5>
+        <h5 class="text-left"><i>{{top_k_error}}</i></h5>
+        <h5 class="text-left"><i>{{exec_time}}</i></h5>
+    </div>
+    <div class="col-6">
+        <div id="{{ids[2]}}"></div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-6">
+        <div id="{{ids[0]}}"></div>
+    </div>
+    <div class="col-6">
+        <div id="{{ids[1]}}"></div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+<!-- Plot -->
+<div class="container" id="cursor_default()">
+    {% for id in ids %}
+        <div id="{{id}}"></div>
+    {% endfor %}
+</div>
