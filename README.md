@@ -65,7 +65,24 @@ Since we use the same parameter set for all experiments, one can compare the per
 well as if the transfer-learning method is better than training from scratch. See the results in the chapter 
 [Dog Breed Classificaiton -- Results](#Chap7). Note that **no** parameter tuning is done here. 
 
-For evaluation of the models performance, we use the following metrics:
+To train the models properly, the data from the dataset (note that all images have different image dimensions) must
+be put to a common format, hence preprocessed. All models above are selected from the
+[pytroch model zoo](https://pytorch.org/vision/stable/models.html) and require the same input dimensions that is
+$[3, 224, 224]$. In addition, the images must be real images. Furthermore, the models from the model zoo have been pretrained on the
+[ImageNet](https://image-net.org/) dataset, and assume the input images to be normalized according to this dataset. 
+
+Therefore, for preprocessing, the images run throw the following transformation steps:
+* Resize image to $[3, 224, 224]$.
+* Convert image type to real images.
+* Normalize image using mean $[0.485, 0.456, 0.406]$ and standard deviation $[0.229, 0.224, 0.225]$.
+
+In addition, the samples that are used for training are also randomly augmented. Augmentation is a method to increase 
+the dataset's variations, which leads to better model generalization during the training. The following random augmentations
+are performed:
+* Horizontal flips
+* Random rotations between $[-5.0, 5.0]$ degrees
+
+For evaluation of the model's performance, we use the following metrics:
 * accuracy
 * top-1 error
 * top-3 error
