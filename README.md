@@ -69,6 +69,7 @@ For evaluation of the models performance, we use the following metrics:
 * accuracy
 * top-1 error
 * top-3 error
+
 The accuracy and the top-1 error are closely related and give a measure about how many samples have been predicted correctly. 
 In addition, the top-3 error is evaluated. The motivation behind this is, that there are many classes of different dog breeds
 that look very similar, even for human eyes. Therefore, it makes sense to check if the model is at least somehow close at a
