@@ -56,10 +56,24 @@ In this project, a number of models and options can be chosen for training. Curr
 * [squeezenet](https://arxiv.org/abs/1602.07360)
 * [vgg](https://arxiv.org/abs/1409.1556)
 
-As goal of this project, the training is run on all of the provided models using transfer-learning and learning from scratch. 
+The goal of this project is to answer the following questions:
+* Is transfer-learning better than training from scratch?
+* Which model performs best on the dataset?
+
+To answer this questions, the training runs on all of the provided models using transfer-learning and learning from scratch. 
 Since we use the same parameter set for all experiments, one can compare the performance between different model types, as 
 well as if the transfer-learning method is better than training from scratch. See the results in the chapter 
 [Dog Breed Classificaiton -- Results](#Chap7). Note that **no** parameter tuning is done here. 
+
+For evaluation of the models performance, we use the following metrics:
+* accuracy
+* top-1 error
+* top-3 error
+The accuracy and the top-1 error are closely related and give a measure about how many samples have been predicted correctly. 
+In addition, the top-3 error is evaluated. The motivation behind this is, that there are many classes of different dog breeds
+that look very similar, even for human eyes. Therefore, it makes sense to check if the model is at least somehow close at a
+certain class. In more detail, a prediction of a sample is counted as correct if the correct class is contained in the
+top-3 predictions of the model.
 
 
 ## File descriptions <a name=Chap3></a>
