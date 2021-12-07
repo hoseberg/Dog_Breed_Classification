@@ -73,6 +73,7 @@ def main():
     top_k = args.top_k
     batch_size = args.batch_size
     use_cuda = args.use_cuda
+    result_json = args.result_json
 
     base_folder = get_base_folder(config_file)
 
@@ -123,7 +124,7 @@ def main():
 
     # Create and apply Evaluater
     print('Running evaluation on {} ... '.format(device.type))
-    evaluater = Evaluater(dataloader, k = top_k, percentage = 1.0)
+    evaluater = Evaluater(dataloader, k = int(top_k), percentage = 1.0)
     accuracy, top_1_error, top_k_error = evaluater.eval(model, device)
 
     # Print results

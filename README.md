@@ -69,14 +69,18 @@ well as if the transfer-learning method is better than training from scratch. Se
 │ │ ├── logos\
 │ │ │ ├─ githublogo.png\
 │ │ │ └─ linkedinlogo.png\
+│ │ \
 │ ├── source\
 │ │ ├── logos\
 │ │ │ └─ app_helpers.py\
+│ │ \
 │ ├── templates\
 │ │ ├─ evaluate.html\
 │ │ ├─ index.html\
 │ │ └─ predict.html\
+│ │ \
 │ └── run.py
+│ \
 ├── scripts\
 │ ├── exp_configs \
 │ │ ├─ config_densenet_scratch.json \
@@ -89,20 +93,24 @@ well as if the transfer-learning method is better than training from scratch. Se
 │ │ ├─ config_squeezenet_transfer.json \
 │ │ ├─ config_vgg_scratch.json \
 │ │ └─ config_vgg_transfer.json \
+│ │ \
 │ ├── config.json >>> Template config file for training \
 │ ├── evaluate.py >>> Evaluation script \
 │ ├── predict_image.py >>> Script for image class prediction \
 │ ├── run.exp.sh >>> Helper shell script to run several trainings/evaluations using configs from exp_configs folder\
 │ └── train.py >>> Training script \
+│ \
 ├── source\
 │ ├── helper_ml_pipeline.ipynb >>> Helper Jupyter Notebook for development of functions in functions.py \
 │ └── functions.py >>> File containing helper functions \
+│ \
 ├── screenshots\
 │ ├── class_distribution.png \
 │ ├── dog_example.png \
 │ ├── app_evaluate.png \
 │ ├── app_predict.png \
 │ └── app_start.png \
+│ \
 ├── requirements.txt\
 └── README.md
 
@@ -183,12 +191,14 @@ a virtual environment and the `requirements.txt` file. E.g., for Linux systems r
     ```console
     python scripts/evaluate.py --config_file <PATH_TO_YOUR_WORKING_DIR>/config.json
     ```
-    or use the web-app (see steps 6. below).
+    or use the web-app (see steps 6. below). Please note, that there are additional options that you can set, 
+    e.g., you can set the usage of a CUDA-capable device with `--use_cuda`.
 5. Use the model to predict the class of an arbitray image. For this, eihter call 
     ```console
     python scripts/predict_image.py <IMAGE_PATH> --config_file <PATH_TO_YOUR_WORKING_DIR>/config.json
     ```
-    or use the web-app (see steps 6. below).
+    or use the web-app (see steps 6. below). Please note, that there are additional options that you can set, 
+    e.g., you can set the usage of a CUDA-capable device with `--use_cuda`.
 6. To evaluate a model or predict the class of an image using the web-app, run
     ```console
     python app/run.py
