@@ -68,19 +68,19 @@ well as if the transfer-learning method is better than training from scratch. Se
 To train the models properly, the data from the dataset (note that all images have different image dimensions) must
 be put to a common format, hence preprocessed. All models above are selected from the
 [pytroch model zoo](https://pytorch.org/vision/stable/models.html) and require the same input dimensions that is
-$[3, 224, 224]$. In addition, the images must be real images. Furthermore, the models from the model zoo have been pretrained on the
+[3, 224, 224]. In addition, the images must be real images. Furthermore, the models from the model zoo have been pretrained on the
 [ImageNet](https://image-net.org/) dataset, and assume the input images to be normalized according to this dataset. 
 
 Therefore, for preprocessing, the images run throw the following transformation steps:
-* Resize image to $[3, 224, 224]$.
+* Resize image to [3, 224, 224].
 * Convert image type to real images.
-* Normalize image using mean $[0.485, 0.456, 0.406]$ and standard deviation $[0.229, 0.224, 0.225]$.
+* Normalize image using mean [0.485, 0.456, 0.406] and standard deviation [0.229, 0.224, 0.225].
 
 In addition, the samples that are used for training are also randomly augmented. Augmentation is a method to increase 
 the dataset's variations, which leads to better model generalization during the training. The following random augmentations
 are performed:
 * Horizontal flips
-* Random rotations between $[-5.0, 5.0]$ degrees
+* Random rotations between [-5.0, 5.0] degrees
 
 For evaluation of the model's performance, we use the following metrics:
 * accuracy
@@ -187,15 +187,15 @@ Here is a list for all parameters that can be set in the configuration file:
 * `lr`: Learning rate used for the optimization.
 * `momentum`: Momentum used for the optimization. Is ignored in case of "adam".
 * `weight_decay`: Used weight decay. 
-* `lr_scheduler_step_size`: Step size for the learning rate scheduler. This means, if set to $n$, after each $n$-th epoch
+* `lr_scheduler_step_size`: Step size for the learning rate scheduler. This means, if set to `n`, after each `n`-th epoch
                             the learning rate is mulitplied by the factor given in `lr_scheduler_fac`.
 * `lr_scheduler_fac`: Factor for learning rate scheduler.
 * `use_loss_weights`: If set to `True`, the loss uses weights for each class, trying to correct inbalancing the training dataset. 
 * `use_cuda`: If set to `True`, a CUDA-capable GPU device is used for training. 
-* `val_epoch`: If set to $n$, after each $n$-th epoch the currently model is evaluated on a subset of the validation dataset. 
+* `val_epoch`: If set to `n`, after each `n`-th epoch the currently model is evaluated on a subset of the validation dataset. 
                If the model is better then during the evaluation before, it's model state is saved to the working directory. 
-* `val_percentage`: Percentage (given in $[0,1]$) of how many samples of the validation set should be used for validation during training.
-* `val_top_k`: The evaluation calclated the accuracy, the top-1 error and the top-k error for the $k$ given here. 
+* `val_percentage`: Percentage (given in [0,1]) of how many samples of the validation set should be used for validation during training.
+* `val_top_k`: The evaluation calclated the accuracy, the top-1 error and the top-k error for the `k` given here. 
 
 
 ## Installation and application instructions <a name=Chap5></a>
