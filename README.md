@@ -71,8 +71,7 @@ well as if the transfer-learning method is better than training from scratch. Se
 │ │ │ └─ linkedinlogo.png\
 │ │ \
 │ ├── source\
-│ │ ├── logos\
-│ │ │ └─ app_helpers.py\
+│ │ └─ app_helpers.py\
 │ │ \
 │ ├── templates\
 │ │ ├─ evaluate.html\
