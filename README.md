@@ -79,7 +79,7 @@ well as if the transfer-learning method is better than training from scratch. Se
 │ │ ├─ index.html\
 │ │ └─ predict.html\
 │ │ \
-│ └── run.py
+│ └── run.py \
 │ \
 ├── scripts\
 │ ├── exp_configs \
