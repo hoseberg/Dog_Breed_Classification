@@ -232,11 +232,18 @@ def evaluate():
 
     # At this point, we should have all --> run evaluation
     # Shift to device and evaluate test dataset
-    model = model.to(device)
-    evaluater = Evaluater(test_dataloader, val_k, 1.0)
-    start = time.time()
-    accuracy, top_1_error, top_k_error = evaluater.eval(model, device)
-    end = time.time()
+    try:
+        model = model.to(device)
+        evaluater = Evaluater(test_dataloader, val_k, 1.0)
+        start = time.time()
+        accuracy, top_1_error, top_k_error = evaluater.eval(model, device)
+        end = time.time()
+    except:
+        error_msg = 'An error occured during evaluation. Maybe there is not '\
+                    'enough memory on the device. '
+        return render_template('evaluate.html', model_loaded=(model is not None), \
+                                model_name=model_name_loc, is_cuda=is_cuda, \
+                                error_msg=error_msg)
 
     # Return results
     accuracy = "Accuracy: {:.4f}".format(accuracy)
@@ -321,12 +328,19 @@ def predict():
                                 error_msg=error_msg)
 
     # Shift to device and predict
-    model = model.to(device)
-    img = img.to(device)
-    start = time.time()
-    output = model(img)
-    _, preds = torch.max(output, 1)
-    end = time.time()
+    try:
+        model = model.to(device)
+        img = img.to(device)
+        start = time.time()
+        output = model(img)
+        _, preds = torch.max(output, 1)
+        end = time.time()    
+    except:
+        error_msg = 'An error occured during prediction. Maybe there is not '\
+                    'enough memory on the device. '
+        return render_template('predict.html', model_loaded=(model is not None), \
+                                model_name=model_name_loc, is_cuda=is_cuda, \
+                                error_msg=error_msg)
 
     # Return results
     exec_time = "{:.2f} ms (on {})".format(1000*(end - start), \
@@ -348,7 +362,7 @@ def predict():
 # Run the actual application
 # The wep app is located at http://0.0.0.0:3001/ (or localhost:3001/ for windows)
 def main():
-    app.run(host='0.0.0.0', port=3001, debug=True)
+    app.run(host='0.0.0.0', port=3001, debug=False)
 
 if __name__ == '__main__':
     main()

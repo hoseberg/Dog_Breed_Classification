@@ -15,7 +15,7 @@ set +x
 # source venv
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 echo ${SCRIPT_DIR}
-source ${SCRIPT_DIR}/../../venv/bin/activate
+source ${SCRIPT_DIR}/../venv/bin/activate
 
 CONFIG_DIR=${SCRIPT_DIR}/exp_configs
 #CONFIG_LIST="config_resnet18_transfer.json config_resnet18_scratch.json config_resnet50_transfer.json config_resnet50_scratch.json"

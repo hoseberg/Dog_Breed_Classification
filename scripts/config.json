@@ -1,11 +1,11 @@
 {
-  "model": "vgg",
+  "model": "resnet50",
   "work_dir": "../training/experiment",
   "train_from_scratch": false,
   "train_dataset": "../data/dogImages/train",
   "val_dataset": "../data/dogImages/valid",
   "test_dataset": "../data/dogImages/test",
-  "num_epochs": 1,
+  "num_epochs": 30,
   "batch_size": 32,
   "lr": 1e-3,
   "momentum": 0.9,
@@ -14,7 +14,7 @@
   "lr_scheduler_fac": 1e-1,
   "use_loss_weights": true,
   "optimizer": "sgd",
-  "use_cuda": false,
+  "use_cuda": true,
   "val_epoch": 3,
   "val_percentage": 0.33,
   "val_top_k": 3
