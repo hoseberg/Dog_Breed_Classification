@@ -37,13 +37,16 @@ for other classification tasks as well.
 However, in the following, we will always consider the Dog Breed Dataset for deeper discussions. 
 
 Here, you see an example image... look how cude the dogs are!! 
+
 ![Dog sample](./screenshots/dog_example.png?raw=true "Dog sample")
 
 The dataste contains 133 dog categories (classes) with a total number of 8351 images. The dataset is divided in a 
 `training`, `validation`, and `test` dataset split, each containing 6680, 835, and 836 images, respectively. 
 
 As you can see in the following image, the distribution of the dog breed classes in the training dataset is not even.
+
 ![Class distribution](./screenshots/class_distribution.png?raw=true "Class distribution")
+
 Therefore, the below experiments use `class weighting`. This is a method that tries to correct inbalancing in the training dataset. 
 
 In this project, a number of models and options can be chosen for training. Currently supported models are:
@@ -168,7 +171,7 @@ a virtual environment and the `requirements.txt` file. E.g., for Linux systems r
     source venv/bin/activate
     python -m pip install -r requirements.txt
     ```
-**Note:** When training on a CUDA-capable GPU, additionaly installation steps might be required!
+    **Note:** When training on a CUDA-capable GPU, additionaly installation steps might be required!
 2. Download the Dog Breed Dataset as described [here](https://github.com/udacity/dog-project).
 3. Train a model. This can be done using the template configuration file:
     ```console
